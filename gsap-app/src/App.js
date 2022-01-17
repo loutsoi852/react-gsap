@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef, forwardRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, forwardRef, useLayoutEffect, useImperativeHandle } from "react";
 import { gsap } from "gsap";
 import './App.css'
 
@@ -14,8 +14,8 @@ function App() {
       {/* <Component4 /> */}
       {/* <Component5 /> */}
       {/* <Component6 /> */}
-      <Component7 />
-      {/* <Component8 /> */}
+      {/* <Component7 /> */}
+      <Component8 />
       {/* <Component9 /> */}
       {/* <Component10 /> */}
     </div>
@@ -169,7 +169,7 @@ function Component4() {
   );
 }
 
-function BoxX({ children, endX }) {
+function Box5({ children, endX }) {
   const boxRef = useRef();
   // run when `endX` changes
   useEffect(() => {
@@ -188,7 +188,7 @@ function Component5() {
   return (
     <div className="app">
       <button onClick={() => setEndX(randomX())}>Pass in a randomized value</button>
-      <BoxX endX={endX}>{endX}</BoxX>
+      <Box5 endX={endX}>{endX}</Box5>
     </div>
   );
 }
@@ -273,4 +273,48 @@ function Component7() {
     </div>
   );
 
+}
+
+const Circle8 = forwardRef(({ size, delay }, ref) => {
+  const el = useRef();
+
+  useImperativeHandle(ref, () => {
+    return {
+      moveTo(x, y) {
+        gsap.to(el.current, { x, y, delay });
+      }
+    };
+  }, [delay]);
+
+  return <div className={`circle8 ${size}`} ref={el}></div>;
+});
+
+function Component8() {
+  const circleRefs = useRef([]);
+
+  circleRefs.current = [];
+
+  useEffect(() => {
+    const onMove = ({ clientX, clientY }) => {
+      circleRefs.current.forEach(ref => ref.moveTo(clientX, clientY));
+    };
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, []);
+
+  const addCircleRef = ref => {
+    if (ref) {
+      console.log('ref', ref)
+      circleRefs.current.push(ref);
+    }
+  };
+
+  return (
+    <div className="app">
+      <p>Move your mouse around</p>
+      <Circle8 size="sm" ref={addCircleRef} delay={0} />
+      <Circle8 size="md" ref={addCircleRef} delay={0.1} />
+      <Circle8 size="lg" ref={addCircleRef} delay={0.2} />
+    </div>
+  );
 }

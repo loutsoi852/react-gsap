@@ -28,3 +28,28 @@
   display: flex;
   justify-content: space-evenly;
 }
+
+.circle8 {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  opacity: 0.3;
+  background-color:green;
+  border-radius: 50%;
+}
+
+.circle8.sm {
+  width: 30px;
+  height: 30px;
+}
+
+.circle8.md {
+  width: 60px;
+  height: 60px;
+}
+
+.circle8.lg {
+  width: 90px;
+  height: 90px;
+}
