@@ -1,6 +1,8 @@
 
 import { useState, useEffect, useRef, forwardRef, useLayoutEffect, useImperativeHandle } from "react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { CustomEase } from "gsap/CustomEase";
 import './App.css'
 
 
@@ -15,8 +17,8 @@ function App() {
       {/* <Component5 /> */}
       {/* <Component6 /> */}
       {/* <Component7 /> */}
-      <Component8 />
-      {/* <Component9 /> */}
+      {/* <Component8 /> */}
+      <Component9 />
       {/* <Component10 /> */}
     </div>
   );
@@ -315,6 +317,102 @@ function Component8() {
       <Circle8 size="sm" ref={addCircleRef} delay={0} />
       <Circle8 size="md" ref={addCircleRef} delay={0.1} />
       <Circle8 size="lg" ref={addCircleRef} delay={0.2} />
+    </div>
+  );
+}
+
+gsap.registerPlugin(CustomEase);
+gsap.config({ trialWarn: false });
+
+// CustomWiggle.create("myWiggle", {
+//   wiggles: 8,
+//   type: "uniform"
+// });
+
+gsap.registerEffect({
+  name: "pulse",
+  effect(targets) {
+    return gsap.fromTo(targets, {
+      scale: 1
+    }, {
+      scale: 1.5,
+      repeat: 1,
+      ease: "bounce",
+      yoyoEase: "power3"
+    });
+  }
+});
+
+gsap.registerEffect({
+  name: "spin",
+  effect(targets) {
+    return gsap.to(targets, {
+      rotation: (i, el) => gsap.utils.snap(360, gsap.getProperty(el, "rotation") + 360)
+    });
+  }
+});
+
+gsap.registerEffect({
+  name: "shake",
+  effect(targets) {
+    return gsap.fromTo(targets, {
+      x: 0
+    }, {
+      x: 10,
+      ease: "myWiggle"
+    });
+  }
+});
+
+const GsapEffect = forwardRef(({ children, effect, targetRef, vars }, ref) => {
+  const animation = useRef();
+
+  useLayoutEffect(() => {
+
+    if (gsap.effects[effect]) {
+      animation.current = gsap.effects[effect](targetRef.current, vars);
+    }
+  }, [effect]);
+
+  useEffect(() => {
+
+    // forward the animation instance if a ref is passed
+    if (typeof ref === "function") {
+      ref(animation.current);
+    } else if (ref) {
+      ref.current = animation.current;
+    }
+  }, [ref]);
+
+  return <>{children}</>;
+});
+
+const wrap = gsap.utils.wrap(["pulse", "spin", "shake"]);
+
+
+const Box9 = forwardRef(({ children }, ref) => {
+  return <div className="box9" ref={ref}>{children}</div>;
+});
+
+
+function Component9() {
+  const boxRef = useRef();
+  const count = useRef(0);
+  const [effect, setEffect] = useState("");
+
+  const toggle = () => {
+    setEffect(wrap(count.current++));
+  };
+
+  return (
+    <div className="app">
+      <div>
+        <button onClick={toggle}>Toggle</button>
+      </div>
+      <p>Effect: {effect}</p>
+      <GsapEffect targetRef={boxRef} effect={effect}>
+        <Box9 ref={boxRef}>Box</Box9>
+      </GsapEffect>
     </div>
   );
 }
