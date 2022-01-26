@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, forwardRef, useLayoutEffect, useImperative
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
+import { Flip } from "gsap/Flip";
 import './App.css'
 
 
@@ -18,8 +19,9 @@ function App() {
       {/* <Component6 /> */}
       {/* <Component7 /> */}
       {/* <Component8 /> */}
-      <Component9 />
+      {/* <Component9 /> */}
       {/* <Component10 /> */}
+      <Component11 />
     </div>
   );
 }
@@ -415,4 +417,152 @@ function Component9() {
       </GsapEffect>
     </div>
   );
+}
+
+
+function Component10() {
+  // To animate elements that are exiting the DOM, we need to delay when React removes the element.We can do this by changing the component’s state after the animation has completed. 
+  const boxRef = useRef();
+  const [active, setActive] = useState(true);
+
+  const remove = () => {
+    gsap.to(boxRef.current, {
+      opacity: 0,
+      onComplete: () => setActive(false)
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={remove}>Remove</button>
+      {active ? <BoxRef ref={boxRef}>Box</BoxRef> : null}
+    </div>
+  );
+
+}
+
+
+let count = 0;
+gsap.registerPlugin(Flip);
+gsap.config({ trialWarn: false });
+const wrapColor = gsap.utils.wrap(["blue", "red", "purple", "orange"])
+function createItem() {
+  return { id: ++count, color: wrapColor(count), status: "entered" }
+}
+
+function Component11() {
+  const el = useRef();
+  const q = gsap.utils.selector(el);
+
+  const [layout, setLayout] = useState(() => {
+    return {
+      items: [
+        createItem(),
+        createItem(),
+        createItem(),
+        createItem()
+      ].reverse()
+    };
+  })
+
+  useLayoutEffect(() => {
+
+    if (!layout.state) return;
+
+    // get the items that are exiting in this batch
+    const exiting = layout.items.filter(item => item.status === "exiting");
+
+    // Flip.from returns a timeline
+    const timeline = Flip.from(layout.state, {
+      absolute: true,
+      ease: "power1.inOut",
+      targets: q(".box11, .button"),
+      scale: true,
+      simple: true,
+      onEnter: elements => {
+        return gsap.fromTo(elements, {
+          opacity: 0,
+          scale: 0
+        }, {
+          opacity: 1,
+          scale: 1,
+          delay: 0.2,
+          duration: 0.3
+        });
+      },
+      onLeave: elements => {
+        return gsap.to(elements, {
+          opacity: 0,
+          scale: 0
+        });
+      }
+    });
+
+    // remove the exiting items from the DOM after the animation is done
+    timeline.add(() => removeItems(exiting));
+
+  }, [layout]);
+
+  const removeItems = (exitingItems) => {
+
+    if (!exitingItems.length) return;
+
+    setLayout(prev => ({
+      state: Flip.getState(q(".box11, .button")),
+      items: prev.items.filter(item => !exitingItems.includes(item))
+    }));
+  };
+
+  const addItem = () => {
+    setLayout({
+      state: Flip.getState(q(".box11, .button")),
+      items: [createItem(), ...layout.items]
+    });
+  };
+
+  const shuffle = () => {
+    setLayout({
+      state: Flip.getState(q(".box11, .button")),
+      items: [...gsap.utils.shuffle(layout.items)]
+    });
+  };
+
+  const remove = (item) => {
+
+    // set the item as exiting which will add a CSS class for display: none;
+    item.status = "exiting";
+
+    setLayout({
+      ...layout,
+      state: Flip.getState(q(".box11, .button")),
+    });
+  };
+
+  return (
+    <div className="app text-center" ref={el}>
+      <div>
+        <button className="button" onClick={addItem}>Add Box</button>
+        <button className="button" onClick={shuffle}>Shuffle</button>
+      </div>
+      <div className="boxes">
+        {layout.items.map((item) => (
+          <div
+            id={`box-${item.id}`}
+            key={item.id}
+            className={`box11 ${item.color} ${item.status}`}
+            onClick={() => remove(item)}
+          >
+            Click Me
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
+function Component12() {
+
+
 }
