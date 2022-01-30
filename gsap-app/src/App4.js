@@ -1,14 +1,18 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Draggable } from "gsap/Draggable";
 import { useEffect, useRef } from "react";
-import "./styles2.css";
+import "./styles4.css";
 
 gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(Draggable);
 
 export default function App() {
     const panels = useRef([]);
     const panelsContainer = useRef();
-    const to = useRef()
+    const scroll = useRef()
+    const drag = useRef()
+    const dragProxyRef = useRef();
 
     const createPanelsRefs = (panel, index) => {
         panels.current[index] = panel;
@@ -17,7 +21,7 @@ export default function App() {
     useEffect(() => {
         const totalPanels = panels.current.length;
 
-        to.current = gsap.to(panels.current, {
+        scroll.current = gsap.to(panels.current, {
             xPercent: -100 * (totalPanels - 1),
             ease: "none",
             paused: true,
@@ -32,7 +36,6 @@ export default function App() {
                     delay: 0, // wait 0.2 seconds from the last scroll event before doing the snapping
                     //ease: "none", // the ease of the snap animation ("power3" by default)
                 },
-                // base vertical scrolling on how wide the container is so it feels more natural.
                 end: () => "+=4000",
                 onUpdate(self) {
                     if (self.progress === 1 && self.direction > 0 && !self.rotating) {
@@ -44,22 +47,71 @@ export default function App() {
                     } else {
                         self.rotating = false
                     }
-
-                    console.log('self.progress', self.progress)
-                    console.log('self.vars', self.vars)
-                    console.log('to.current', to.current)
-                }
+                },
             }
         });
+
+
+        drag.current = Draggable.create(dragProxyRef.current, {
+            type: "x",
+            trigger: panels.current,
+            onPress() {
+                this.startOffset = scroll.current.scrollTrigger.scroll();
+            },
+            onDrag() {
+                let ST = scroll.current.scrollTrigger
+                const dragDiff = this.startX - this.x
+
+                console.clear('--------------')
+                console.log(ST, 'ST')
+                console.log(this, 'this')
+                console.log(this.startOffset, 'this.startOffset')
+                console.log(this.startX, 'this.startX')
+                console.log(this.x, 'this.x')
+                console.log(dragDiff, 'dragDiff')
+                console.log(this.startOffset, 'this.startOffset')
+                console.log(this.startOffset + dragDiff, 'this.startOffset + dragDiff)')
+                //console.log(ST.progress, 'ST.progress')
+                //console.log(ST.scroll(), 'ST.scroll()')
+                //console.log(ST.progress, 'self.progress')
+                console.log(ST.direction, 'ST.direction')
+                console.log(this.getDirection(), 'this.getDirection()')
+
+                if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'left' && !ST.rotating) {
+                    //console.log('rotate 1')
+                    ST.rotating = true
+                    this.startOffset = ST.start - dragDiff
+                    ST.scroll(ST.start + 5)
+                    return
+                }
+
+                if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'right' && !ST.rotating) {
+                    console.log('rotate 2')
+                    ST.rotating = true
+                    if (this.startOffset < ST.end) {
+                        this.startOffset = ST.end - dragDiff
+                        ST.scroll(ST.end - 5);
+                        return
+                    }
+                }
+                //console.log('no rotate')
+
+
+                ST.rotating = false
+                ST.scroll(this.startOffset + dragDiff)
+
+            },
+            onDragEnd() {
+            }
+        });
+
+
     }, []);
 
     return (
-        <>
+        <div style={{ position: 'relative' }}>
             <div className="container" ref={panelsContainer}>
-                <div
-                    className="description panel blue"
-                    ref={(e) => createPanelsRefs(e, 0)}
-                >
+                <div className="description panel blue" ref={(e) => createPanelsRefs(e, 0)}>
                     <div>
                         <h1>Horizontal snapping sections (simple)</h1>
                         <p>
@@ -86,10 +138,7 @@ export default function App() {
                 <section className="panel green" ref={(e) => createPanelsRefs(e, 4)}>
                     FOUR
                 </section>
-                <div
-                    className="description panel blue"
-                    ref={(e) => createPanelsRefs(e, 5)}
-                >
+                <div className="description panel blue" ref={(e) => createPanelsRefs(e, 5)} >
                     <div>
                         <h1>Horizontal snapping sections (simple)</h1>
                         <p>
@@ -105,7 +154,7 @@ export default function App() {
                     </div>
                 </div>
             </div>
-
-        </>
+            <div className="drag-proxy" ref={dragProxyRef}></div>
+        </div>
     );
 }
