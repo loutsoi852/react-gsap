@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Draggable } from "gsap/Draggable";
+import { InertiaPlugin } from "gsap/InertiaPlugin";
 
 import { useEffect, useRef, useState } from "react";
 import "./styles8.css";
@@ -8,7 +9,7 @@ import stc from 'string-to-color'
 
 
 gsap.registerPlugin(ScrollTrigger, Draggable);
-
+gsap.registerPlugin(InertiaPlugin);
 
 export default function App() {
     const boxes = useRef([]);
@@ -28,6 +29,7 @@ export default function App() {
     const drag = useRef()
     const scroll1 = useRef()
     const scroll2 = useRef()
+    const sTrigger = useRef()
 
 
 
@@ -102,7 +104,7 @@ export default function App() {
 
 
 
-        ScrollTrigger.create({
+        sTrigger.current = ScrollTrigger.create({
             pin: boxContainer2.current,
             scrub: true,
             start: 0,
@@ -114,7 +116,6 @@ export default function App() {
             },
             end: () => "+=4000",
             onUpdate(self) {
-                console.log(self.progress, self.direction)
                 if (self.progress === 1 && self.direction > 0 && !self.rotating) {
                     console.log('forward')
                     self.rotating = true
@@ -134,41 +135,67 @@ export default function App() {
         });
 
 
-        // drag.current = Draggable.create(dragProxyRef.current, {
-        //     type: "x",
-        //     trigger: boxes.current,
-        //     onPress() {
-        //         this.startOffset = scroll.current.scrollTrigger.scroll();
-        //     },
-        //     onDrag() {
-        //         let ST = scroll.current.scrollTrigger
-        //         const dragDiff = this.startX - this.x
+        drag.current = Draggable.create(dragProxyRef.current, {
+            type: "x",
+            trigger: boxes.current,
+            // inertia: { x: 500 },
+            throwProps: true,
+            onPress() {
+                this.startOffset = sTrigger.current.scroll();
+            },
+            onDrag() {
+                let ST = sTrigger.current
+                const dragDiff = this.startX - this.x
 
-        //         if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'left' && !ST.rotating) {
-        //             console.log('rotate 1')
-        //             ST.rotating = true
-        //             this.startOffset = ST.start - dragDiff
-        //             ST.scroll(ST.start + 5)
-        //             return
-        //         }
+                if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'left' && !ST.rotating) {
+                    console.log('rotate 1')
+                    ST.rotating = true
+                    this.startOffset = ST.start - dragDiff
+                    ST.scroll(ST.start + 5)
+                    return
+                }
 
-        //         if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'right' && !ST.rotating) {
-        //             console.log('rotate 2')
-        //             ST.rotating = true
-        //             if (this.startOffset < ST.end) {
-        //                 this.startOffset = ST.end - dragDiff
-        //                 ST.scroll(ST.end - 5);
-        //                 return
-        //             }
-        //         }
+                if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'right' && !ST.rotating) {
+                    console.log('rotate 2')
+                    ST.rotating = true
+                    if (this.startOffset < ST.end) {
+                        this.startOffset = ST.end - dragDiff
+                        ST.scroll(ST.end - 5);
+                        return
+                    }
+                }
 
-        //         ST.rotating = false
-        //         ST.scroll(this.startOffset + dragDiff)
+                ST.rotating = false
+                ST.scroll(this.startOffset + dragDiff)
 
-        //     },
-        //     onDragEnd() {
-        //     }
-        // });
+            },
+            onThrowUpdate() {
+                console.log('throwing')
+                let ST = sTrigger.current
+                const dragDiff = this.startX - this.x
+
+                if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'left' && !ST.rotating) {
+                    console.log('rotate 1')
+                    ST.rotating = true
+                    this.startOffset = ST.start - dragDiff
+                    ST.scroll(ST.start + 5)
+                    return
+                }
+
+                if ((ST.progress < 1e-5 || ST.progress > 0.99) && this.getDirection() === 'right' && !ST.rotating) {
+                    console.log('rotate 2')
+                    ST.rotating = true
+                    if (this.startOffset < ST.end) {
+                        this.startOffset = ST.end - dragDiff
+                        ST.scroll(ST.end - 5);
+                        return
+                    }
+                }
+
+                ST.rotating = false
+                ST.scroll(this.startOffset + dragDiff)
+            }
+        });
 
 
 
@@ -177,7 +204,7 @@ export default function App() {
     return (
         <>
             <div ref={boxContainer2} style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', overflow: 'hidden' }}>
-                <div ref={boxContainer} style={{ display: 'flex', height: '100%', width: '100vw', justifyContent: 'flex-start', alignItems: 'center' }}>
+                <div ref={boxContainer} style={{ display: 'flex', height: '100%', width: '90vw', justifyContent: 'flex-start', alignItems: 'center' }}>
                     <div ref={(e) => createBoxesRefs(e, 0)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("0"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>0</div>
                     <div ref={(e) => createBoxesRefs(e, 1)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("1"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>1</div>
                     <div ref={(e) => createBoxesRefs(e, 2)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("2"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>2</div>
@@ -186,7 +213,7 @@ export default function App() {
                     <div ref={(e) => createBoxesRefs(e, 5)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("5"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>5</div>
                     <div ref={(e) => createBoxesRefs(e, 6)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("0"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>0</div>
                 </div>
-                <div style={{ display: 'flex', height: '100%', width: '100vw', justifyContent: 'flex-start', alignItems: 'center' }}>
+                <div style={{ display: 'flex', height: '100%', width: '90vw', justifyContent: 'flex-start', alignItems: 'center' }}>
                     <div ref={(e) => createBoxesRefs2(e, 0)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("0"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>0</div>
                     <div ref={(e) => createBoxesRefs2(e, 1)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("1"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>1</div>
                     <div ref={(e) => createBoxesRefs2(e, 2)} style={{ height: '40vh', width: '100vw', minWidth: '100vw', backgroundColor: stc("2"), display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2em' }}>2</div>
